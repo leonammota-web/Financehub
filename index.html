@@ -6,6 +6,7 @@
 <title>Garagem Digital</title>
 <script src="https://cdn.tailwindcss.com/3.4.17"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=Rajdhani:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
 :root{--bg:#eef3fa;--card:rgba(255,255,255,.85);--tx:#0f1a2e;--mut:#5b6b85;--ln:#d2dcec;--ac:#0891b2;--ac2:#6d28d9;--in:#f3f6fc;--hdb:rgba(255,255,255,.82);--grid:rgba(8,145,178,.06);box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
@@ -29,8 +30,9 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
 .ok{color:#10b981}.warn{color:#f59e0b}.bad{color:#ef4444}.mut{color:var(--mut)}
 .al{font-size:12px;padding:8px 10px;border-radius:10px;margin-bottom:6px;border:1px solid currentColor;background:color-mix(in srgb,currentColor 10%,transparent)}
 .row{display:flex;justify-content:space-between;gap:10px;padding:8px 0;border-bottom:1px solid var(--ln);font-size:13px}
-.btn{display:inline-flex;align-items:center;gap:6px;border:1px solid rgba(255,255,255,.15);border-radius:12px;padding:9px 14px;font:600 13px Inter,sans-serif;color:#fff;cursor:pointer;background:linear-gradient(135deg,#06b6d4,#3b82f6 60%,#7c3aed);box-shadow:0 8px 22px -10px #22d3ee}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;border:1px solid rgba(255,255,255,.15);border-radius:12px;padding:9px 14px;font:600 13px Inter,sans-serif;color:#fff;cursor:pointer;background:linear-gradient(135deg,#06b6d4,#3b82f6 60%,#7c3aed);box-shadow:0 8px 22px -10px #22d3ee}
 .btn:hover{filter:brightness(1.12)}
+.btn:disabled{opacity:.6;cursor:wait}
 .btn.ghost{background:var(--in);color:var(--tx);border-color:var(--ln);box-shadow:none}
 .btn.ghost:hover{border-color:var(--ac)}
 .ib{padding:6px 8px;border-radius:10px}
@@ -41,9 +43,11 @@ body input:focus,body select:focus,body textarea:focus{outline:none;border-color
 .nv::-webkit-scrollbar{display:none}
 .tb{flex:none;display:inline-flex;align-items:center;gap:8px;padding:9px 14px;border-radius:12px;border:1px solid transparent;background:transparent;color:var(--mut);font:600 13px Inter,sans-serif;cursor:pointer;white-space:nowrap}
 .tb.on{color:var(--ac);background:color-mix(in srgb,var(--ac) 14%,transparent);border-color:color-mix(in srgb,var(--ac) 40%,transparent);box-shadow:0 0 22px -8px var(--ac)}
-#md{display:none;position:fixed;inset:0;z-index:50;align-items:center;justify-content:center;padding:16px;background:rgba(2,6,15,.65);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
+#md,#lg{display:none;position:fixed;inset:0;z-index:50;align-items:center;justify-content:center;padding:16px;background:rgba(2,6,15,.65);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
+#lg{z-index:70;background:var(--bg)}
 .mc{width:100%;max-width:560px;max-height:88vh;overflow:auto;background:var(--bg)}
-#ts{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translate(-50%,30px);opacity:0;transition:.3s;background:var(--bg);border:1px solid var(--ac);color:var(--tx);padding:10px 16px;border-radius:14px;z-index:60;pointer-events:none;font-size:13px;box-shadow:0 0 28px -6px var(--ac)}
+.lgc{width:100%;max-width:380px}
+#ts{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translate(-50%,30px);opacity:0;transition:.3s;background:var(--bg);border:1px solid var(--ac);color:var(--tx);padding:10px 16px;border-radius:14px;z-index:80;pointer-events:none;font-size:13px;box-shadow:0 0 28px -6px var(--ac);max-width:90vw;text-align:center}
 #ts.on{opacity:1;transform:translate(-50%,0)}
 main>*{animation:up .4s both}
 @keyframes up{from{opacity:0;transform:translateY(8px)}}
@@ -55,17 +59,36 @@ main>*{animation:up .4s both}
 <header class="hd">
   <div class="flex items-center gap-3"><div class="logo" data-ic="car"></div><div><div class="brand">GARAGEM DIGITAL</div><div class="s" id="sub">Gestão &amp; Performance</div></div></div>
   <div class="flex gap-2">
-    <button class="btn ghost" onclick="openV()"><span data-ic="pen"></span><span class="hs">Veículo</span></button>
-    <button class="btn ghost" onclick="bk()"><span data-ic="save"></span><span class="hs">Backup</span></button>
-    <button class="btn" onclick="share()"><span data-ic="share"></span></button>
+    <button class="btn ghost" onclick="openV()" aria-label="Veículo"><span data-ic="pen"></span><span class="hs">Veículo</span></button>
+    <button class="btn ghost" onclick="bk()" aria-label="Backup"><span data-ic="save"></span><span class="hs">Backup</span></button>
+    <button class="btn ghost" onclick="logout()" aria-label="Sair"><span data-ic="out"></span><span class="hs">Sair</span></button>
   </div>
 </header>
 <nav class="nv" id="nav"></nav>
-<main id="app" class="mx-auto max-w-6xl p-4 space-y-4"></main>
+<main id="app" class="mx-auto max-w-6xl p-4 space-y-4"><div class="card s">Carregando…</div></main>
 <div id="md" onclick="if(event.target==this)close_()"></div>
+<div id="lg">
+  <div class="card lgc">
+    <div class="flex items-center gap-3 mb-4"><div class="logo" data-ic="car"></div><div><div class="brand">GARAGEM DIGITAL</div><div class="s">Entre para acessar seus dados na nuvem</div></div></div>
+    <div class="space-y-3">
+      <div><label for="lg_email">E-mail</label><input id="lg_email" type="email" autocomplete="email" inputmode="email"></div>
+      <div><label for="lg_pass">Senha (mínimo 6 caracteres)</label><input id="lg_pass" type="password" autocomplete="current-password"></div>
+    </div>
+    <div class="flex gap-2 mt-4">
+      <button class="btn flex-1" id="lg_in" onclick="auth('in')">Entrar</button>
+      <button class="btn ghost flex-1" id="lg_up" onclick="auth('up')">Criar conta</button>
+    </div>
+    <div class="s mt-3" id="lg_msg" style="min-height:16px"></div>
+  </div>
+</div>
 <div id="ts"></div>
 
 <script>
+/* ============ CONFIGURAÇÃO SUPABASE ============ */
+const SUPABASE_URL='https://hgnhnqcyutdbwhiyhbrz.supabase.co';
+const SUPABASE_KEY='sb_publishable_7tX_ipWczULMCPplm0T39Q_IqZWhfVV';
+const sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+
 const $=s=>document.querySelector(s);
 const I={grid:'<rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/>',
 car:'<path d="M3 13l2-5a2 2 0 0 1 2-1h10a2 2 0 0 1 2 1l2 5v4H3z"/><circle cx="7.5" cy="17" r="1.5"/><circle cx="16.5" cy="17" r="1.5"/>',
@@ -76,17 +99,16 @@ file:'<path d="M6 3h9l4 4v14H6zM14 3v5h5M9 13h6M9 17h6"/>',
 plus:'<path d="M12 5v14M5 12h14"/>',
 pen:'<path d="M4 20h4L19 9l-4-4L4 16zM13 7l4 4"/>',
 save:'<path d="M12 4v10m0 0l-4-4m4 4l4-4M5 20h14"/>',
-share:'<circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="6" r="2.5"/><circle cx="18" cy="18" r="2.5"/><path d="M8.2 10.8l7.6-3.6M8.2 13.2l7.6 3.6"/>',
+out:'<path d="M9 21H5V3h4M16 17l5-5-5-5M21 12H9"/>',
 trash:'<path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/>'};
 const ic=n=>`<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${I[n]}</svg>`;
 const E=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const R=n=>'R$ '+(+n||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
 const D=d=>d?d.split('-').reverse().join('/'):'-';
 const N=n=>(+n||0).toLocaleString('pt-BR');
-const KEY='garagem_digital_v2',yr=new Date().getFullYear(),hoje=new Date().toISOString().slice(0,10);
-let S=null;try{S=JSON.parse(localStorage.getItem(KEY))}catch(e){}
-S=S||{v:{},m:[],a:[],l:[],t:[]};
-const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}};
+const LEGACY='garagem_digital_v2',yr=new Date().getFullYear(),hoje=new Date().toISOString().slice(0,10);
+const emptyS=()=>({v:{},m:[],a:[],l:[],t:[]});
+let S=emptyS(),VID=null;
 
 const T={
  m:{t:'Manutenção',f:[['data','Data','date'],['desc','Serviço realizado'],['km','Km','number'],['peca','Valor das peças (R$)','number'],['mao','Mão de obra (R$)','number'],['prox','Próxima revisão (km)','number']]},
@@ -96,6 +118,39 @@ const T={
 };
 const VF=[['nome','Apelido do veículo'],['mm','Marca / modelo'],['af','Ano fabricação','number'],['am','Ano modelo','number'],['cor','Cor'],['placa','Placa'],['ren','Renavam'],['chassi','Chassi'],['motor','Motor'],['comb','Combustível principal','select',['Gasolina','Etanol','Flex','Diesel','Elétrico','Híbrido']],['cambio','Câmbio','select',['Manual','Automático']],['gnv','Possui kit GNV','select',['Não','Sim']],['km','Odômetro (km)','number'],['seg','Seguradora'],['apo','Nº da apólice'],['vseg','Vencimento do seguro','date'],['tseg','Telefone assistência 24h'],['obs','Observações','textarea']];
 
+/* ============ MAPEAMENTO APP <-> BANCO ============ */
+const MAP={
+ m:{tb:'manutencoes',c:{data:'data',desc:'descricao',km:'km',peca:'valor_pecas',mao:'valor_mao_obra',prox:'proxima_revisao_km',valor:'valor_total'}},
+ a:{tb:'abastecimentos',c:{data:'data',km:'km',comb:'combustivel',un:'unidade',litros:'quantidade',valor:'valor_total'}},
+ l:{tb:'limpezas',c:{data:'data',desc:'descricao',valor:'valor_total'}},
+ t:{tb:'taxas',c:{tipo:'tipo',data:'data',ano:'ano',valor:'valor_total',st:'situacao'}}
+};
+const VM={nome:'nome',mm:'marca_modelo',af:'ano_fab',am:'ano_modelo',cor:'cor',placa:'placa',ren:'renavam',chassi:'chassi',motor:'motor',comb:'combustivel',cambio:'cambio',gnv:'possui_gnv',km:'odometro_km',seg:'seguradora',apo:'apolice',vseg:'venc_seguro',tseg:'tel_assistencia',obs:'observacoes'};
+const NN=['valor_pecas','valor_mao_obra','valor_total'];
+const vtype=n=>(VF.find(f=>f[0]==n)||[0,0,'text'])[2];
+
+function toDB(k,o){const r={},typ=n=>(T[k].f.find(f=>f[0]==n)||[0,0,'number'])[2];
+ for(const[n,col]of Object.entries(MAP[k].c)){
+  if(k=='m'&&n=='valor')continue;
+  const val=o[n];
+  if(val===''||val==null){if(col=='data')continue;r[col]=NN.includes(col)?0:null;continue}
+  r[col]=typ(n)=='number'?+val:val}
+ return r}
+function fromDB(k,row){const o={id:row.id};
+ for(const[n,col]of Object.entries(MAP[k].c))o[n]=row[col]==null?'':row[col];
+ return o}
+function vToDB(v){const r={};
+ for(const[n,col]of Object.entries(VM)){const val=v[n];
+  if(n=='gnv'){r[col]=val=='Sim';continue}
+  if(val===''||val==null){r[col]=null;continue}
+  r[col]=vtype(n)=='number'?+val:val}
+ return r}
+function vFromDB(row){const v={};
+ for(const[n,col]of Object.entries(VM)){const val=row[col];
+  v[n]=n=='gnv'?(val?'Sim':'Não'):(val==null?'':val)}
+ return v}
+
+/* ============ CÁLCULOS ============ */
 const odo=()=>Math.max(+S.v.km||0,...['m','a'].flatMap(k=>S[k].map(x=>+x.km||0)));
 const sum=k=>S[k].reduce((s,x)=>s+(+x.valor||0),0);
 function media(u){const a=S.a.filter(x=>+x.km&&+x.litros&&(x.un=='m³'?'m³':'Litros')==u).sort((p,q)=>p.km-q.km);if(a.length<2)return 0;const L=a.slice(1).reduce((s,x)=>s+(+x.litros),0);return L?(a[a.length-1].km-a[0].km)/L:0}
@@ -109,6 +164,7 @@ function alerts(){const a=[],v=S.v,now=Date.now();
  const g=gnvSt();if(g[2]=='bad'||g[0]=='Sem vistoria')a.push([g[2],'Vistoria do GNV: '+g[0].toLowerCase()]);
  return a}
 
+/* ============ TELAS ============ */
 const fld=([k,l,t,o],val='')=>`<div><label for="f_${k}">${l}</label>${t=='select'?`<select id="f_${k}">${o.map(x=>`<option ${x==val?'selected':''}>${x}</option>`).join('')}</select>`:t=='textarea'?`<textarea id="f_${k}" rows="3">${E(val)}</textarea>`:`<input id="f_${k}" type="${t||'text'}" ${t=='number'?'step="any" inputmode="decimal"':''} value="${E(val)}">`}</div>`;
 const r=([a,b])=>`<div class="row"><span style="color:var(--mut)">${a}</span><b style="text-align:right">${b||'-'}</b></div>`;
 
@@ -122,10 +178,12 @@ function render(){
  if(cur=='dash')chart();
  if(cur=='a')$('#f_comb').onchange=()=>{$('#f_un').value=$('#f_comb').value=='GNV'?'m³':'Litros'};
 }
+function legacy(){try{const d=JSON.parse(localStorage.getItem(LEGACY));if(!d)return null;const has=Object.keys(d.v||{}).length||['m','a','l','t'].some(k=>(d[k]||[]).length);return has?d:null}catch(e){return null}}
 function dash(){
  const ip=ipvaSt(),gn=gnvSt(),tot=sum('m')+sum('a')+sum('l')+sum('t'),al=alerts(),v=S.v;
  const kp=(l,val,sub,c='')=>`<div class="card"><div class="lb">${l}</div><div class="k ${c}">${val}</div><div class="s" style="margin-top:4px">${sub}</div></div>`;
- return `${!v.nome&&!v.mm?`<div class="card flex items-center justify-between gap-3"><div><div class="ttl">Bem-vindo!</div><div class="s">Cadastre os dados do seu veículo para começar.</div></div><button class="btn" onclick="openV()">${ic('pen')}Cadastrar</button></div>`:''}
+ return `${legacy()?`<div class="card flex items-center justify-between gap-3"><div><div class="ttl">Dados salvos neste aparelho</div><div class="s">Envie para a nuvem para não perder nada e acessar de qualquer lugar.</div></div><button class="btn" onclick="impLocal()">${ic('save')}Enviar</button></div>`:''}
+ ${!v.nome&&!v.mm?`<div class="card flex items-center justify-between gap-3"><div><div class="ttl">Bem-vindo!</div><div class="s">Cadastre os dados do seu veículo para começar.</div></div><button class="btn" onclick="openV()">${ic('pen')}Cadastrar</button></div>`:''}
  <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">${kp('Odômetro atual',N(odo())+' <small>km</small>','Leitura mais recente')}${kp('Custo total',R(tot),'Todos os registros')}${kp('Status do IPVA',ip[0],ip[1],ip[2]+' sm')}${kp('Vistoria GNV',gn[0],gn[1],gn[2]+' sm')}</div>
  <div class="grid lg:grid-cols-3 gap-4"><div class="card lg:col-span-2"><div class="lb mb-3">Distribuição de custos</div><div style="height:250px;position:relative"><canvas id="cc"></canvas></div></div>
  <div class="card"><div class="lb mb-2">Resumo do veículo</div>${[['Veículo',E(v.nome||v.mm)],['Placa',E(v.placa)],['Combustível',E(v.comb)],['Consumo médio',[media('Litros')?media('Litros').toFixed(1)+' km/l':'',media('m³')?media('m³').toFixed(1)+' km/m³':''].filter(Boolean).join(' · ')]].map(r).join('')}<div class="lb mt-4 mb-2">Alertas</div>${al.length?al.map(a=>`<div class="al ${a[0]}">${a[1]}</div>`).join(''):'<div class="s">Nenhum alerta no momento.</div>'}</div></div>`;
@@ -135,27 +193,100 @@ function det(){const v=S.v,bl=(t,rows)=>`<div class="card"><div class="lb mb-2" 
  <div class="grid md:grid-cols-3 gap-4">${bl('Identificação',[['Marca/modelo',E(v.mm)],['Ano fabricação',E(v.af)],['Ano modelo',E(v.am)],['Cor',E(v.cor)],['Placa',E(v.placa)],['Renavam',E(v.ren)],['Chassi',E(v.chassi)]])}${bl('Especificações',[['Motor',E(v.motor)],['Combustível',E(v.comb)],['Câmbio',E(v.cambio)],['Kit GNV',E(v.gnv)],['Odômetro',N(odo())+' km']])}${bl('Seguro / proteção',[['Seguradora',E(v.seg)],['Apólice',E(v.apo)],['Vencimento',D(v.vseg)],['Assistência 24h',E(v.tseg)]])}</div>
  <div class="card"><div class="lb mb-2" style="color:var(--ac)">Observações</div><div class="s" style="white-space:pre-wrap;font-size:13px">${E(v.obs)||'Sem observações.'}</div></div>`}
 const row=(k,x,i)=>{const t=x.desc||x.tipo||x.comb||'Registro',m=[D(x.data),x.km?N(x.km)+' km':'',x.litros?x.litros+(x.un=='m³'?' m³':' L'):'',k=='t'&&x.ano?x.ano:'',x.prox?'próx. '+N(x.prox)+' km':'',k=='m'&&(x.peca||x.mao)?'peças '+R(x.peca)+' + mão de obra '+R(x.mao):'',x.st||''].filter(Boolean).join(' · ');
- return `<div class="row items-center"><div><div style="font-weight:600">${E(t)}</div><div class="s">${E(m)}</div></div><div class="flex items-center gap-2"><b>${R(x.valor)}</b><button class="btn ghost ib" onclick="del('${k}',${i})">${ic('trash')}</button></div></div>`};
+ return `<div class="row items-center"><div><div style="font-weight:600">${E(t)}</div><div class="s">${E(m)}</div></div><div class="flex items-center gap-2"><b>${R(x.valor)}</b><button class="btn ghost ib" aria-label="Excluir registro" onclick="del('${k}',${i})">${ic('trash')}</button></div></div>`};
 function list(k){const c=T[k],it=S[k].map((x,i)=>[x,i]).sort((p,q)=>(q[0].data||'').localeCompare(p[0].data||''));
- return `<div class="card"><div class="ttl mb-3">${c.t}</div><div class="grid grid-cols-2 md:grid-cols-3 gap-3">${c.f.map(f=>fld(f,f[0]=='data'?hoje:'')).join('')}</div><button class="btn mt-4" onclick="add('${k}')">${ic('plus')}Adicionar registro</button></div>
+ return `<div class="card"><div class="ttl mb-3">${c.t}</div><div class="grid grid-cols-2 md:grid-cols-3 gap-3">${c.f.map(f=>fld(f,f[0]=='data'?hoje:'')).join('')}</div><button class="btn mt-4" id="addb" onclick="add('${k}')">${ic('plus')}Adicionar registro</button></div>
  <div class="card"><div class="flex justify-between mb-2"><div class="lb">Histórico (${it.length})</div><b>${R(sum(k))}</b></div>${it.map(([x,i])=>row(k,x,i)).join('')||'<div class="s">Nenhum registro ainda.</div>'}</div>`}
 function chart(){const cv=$('#cc');if(!cv||!window.Chart)return;const gv=S.t.filter(x=>x.tipo=='Vistoria GNV').reduce((s,x)=>s+(+x.valor||0),0),d=[sum('m'),sum('a')+gv,sum('l'),sum('t')-gv],has=d.some(x=>x);if(ch)ch.destroy();
  ch=new Chart(cv,{type:'doughnut',data:{labels:['Manutenção','Combustível & GNV','Limpeza','Impostos'],datasets:[{data:has?d:[1,0,0,0],backgroundColor:has?['#22d3ee','#3b82f6','#8b5cf6','#f472b6']:['#64748b44'],borderColor:'transparent',hoverOffset:6}]},options:{maintainAspectRatio:false,cutout:'68%',plugins:{legend:{position:'bottom',labels:{color:getComputedStyle(document.documentElement).getPropertyValue('--mut'),usePointStyle:true,padding:14}},tooltip:{enabled:has,callbacks:{label:c=>' '+R(c.parsed)}}}}})}
 
-function add(k){const o={};T[k].f.forEach(([n])=>o[n]=$('#f_'+n).value);if(k=='m')o.valor=(+o.peca||0)+(+o.mao||0);if(!o.data&&!o.valor)return toast('Preencha ao menos data ou valor');S[k].push(o);save();render();toast('Registro adicionado')}
-function del(k,i){S[k].splice(i,1);save();render();toast('Registro removido')}
+/* ============ NUVEM: CARREGAR / SALVAR ============ */
+const errMsg=e=>{const m=(e&&e.message)||String(e);
+ if(/Invalid login/i.test(m))return'E-mail ou senha incorretos';
+ if(/already registered/i.test(m))return'Este e-mail já tem conta. Toque em Entrar';
+ if(/Password should be/i.test(m))return'A senha precisa ter ao menos 6 caracteres';
+ if(/Email not confirmed/i.test(m))return'Confirme o e-mail antes de entrar (veja sua caixa de entrada)';
+ if(/fetch|network/i.test(m))return'Sem conexão. Tente novamente';
+ return m};
+async function load(){
+ let{data:vs,error}=await sb.from('veiculos').select('*').order('created_at').limit(1);
+ if(error)throw error;
+ let v=vs[0];
+ if(!v){const r0=await sb.from('veiculos').insert({}).select().single();if(r0.error)throw r0.error;v=r0.data}
+ VID=v.id;S=emptyS();S.v=vFromDB(v);
+ const ks=['m','a','l','t'];
+ const res=await Promise.all(ks.map(k=>sb.from(MAP[k].tb).select('*').eq('veiculo_id',VID)));
+ res.forEach((x,i)=>{if(x.error)throw x.error;S[ks[i]]=x.data.map(row=>fromDB(ks[i],row))})
+}
+async function start(){
+ $('#lg').style.display='none';
+ $('#app').innerHTML='<div class="card s">Carregando seus dados…</div>';
+ try{await load();render()}catch(e){$('#app').innerHTML=`<div class="card"><div class="ttl">Não foi possível carregar</div><div class="s mb-3">${E(errMsg(e))}. Confira se o arquivo SQL foi executado no Supabase.</div><button class="btn" onclick="start()">Tentar de novo</button></div>`}
+}
+async function add(k){
+ const o={};T[k].f.forEach(([n])=>o[n]=$('#f_'+n).value);
+ if(k=='m')o.valor=(+o.peca||0)+(+o.mao||0);
+ if(!o.data&&!o.valor)return toast('Preencha ao menos data ou valor');
+ const b=$('#addb');b.disabled=true;
+ const row=toDB(k,o);row.veiculo_id=VID;
+ const{data,error}=await sb.from(MAP[k].tb).insert(row).select().single();
+ if(error){b.disabled=false;return toast(errMsg(error))}
+ S[k].push(fromDB(k,data));render();toast('Registro adicionado')}
+async function del(k,i){
+ const x=S[k][i];if(!x)return;
+ const{error}=await sb.from(MAP[k].tb).delete().eq('id',x.id);
+ if(error)return toast(errMsg(error));
+ S[k].splice(i,1);render();toast('Registro removido')}
 function modal(h){const m=$('#md');m.innerHTML=`<div class="card mc">${h}</div>`;m.style.display='flex'}
 function close_(){$('#md').style.display='none'}
-function openV(){modal(`<div class="ttl mb-3">Dados do veículo</div><div class="grid grid-cols-2 gap-3">${VF.map(f=>fld(f,S.v[f[0]]||'')).join('')}</div><div class="flex gap-2 mt-4"><button class="btn" onclick="saveV()">Salvar</button><button class="btn ghost" onclick="close_()">Cancelar</button></div>`)}
-function saveV(){VF.forEach(([k])=>S.v[k]=$('#f_'+k).value);save();close_();render();toast('Veículo atualizado')}
-function bk(){modal(`<div class="ttl mb-2">Backup dos dados</div><div class="s mb-2">Copie o texto abaixo e guarde. Para restaurar, cole um backup aqui e toque em Restaurar.</div><textarea id="bkt" rows="9" style="font-family:monospace;font-size:11px">${E(JSON.stringify(S))}</textarea><div class="flex gap-2 mt-3 flex-wrap"><button class="btn" onclick="cp()">Copiar</button><button class="btn ghost" onclick="rs()">Restaurar</button><button class="btn ghost" onclick="close_()">Fechar</button></div>`)}
+function openV(){modal(`<div class="ttl mb-3">Dados do veículo</div><div class="grid grid-cols-2 gap-3">${VF.map(f=>fld(f,S.v[f[0]]||'')).join('')}</div><div class="flex gap-2 mt-4"><button class="btn" id="svb" onclick="saveV()">Salvar</button><button class="btn ghost" onclick="close_()">Cancelar</button></div>`)}
+async function saveV(){
+ const v={};VF.forEach(([k])=>v[k]=$('#f_'+k).value);
+ $('#svb').disabled=true;
+ const{error}=await sb.from('veiculos').update(vToDB(v)).eq('id',VID);
+ if(error){$('#svb').disabled=false;return toast(errMsg(error))}
+ S.v=v;close_();render();toast('Veículo atualizado')}
+
+/* ============ BACKUP / IMPORTAÇÃO ============ */
+function snapshot(){const c=x=>x.map(({id,...o})=>o);return{v:S.v,m:c(S.m),a:c(S.a),l:c(S.l),t:c(S.t)}}
+function bk(){modal(`<div class="ttl mb-2">Backup dos dados</div><div class="s mb-2">Seus dados já ficam salvos na nuvem. Este texto é uma cópia extra. Para importar um backup antigo, cole-o aqui e toque em Importar (os registros são adicionados aos atuais).</div><textarea id="bkt" rows="9" style="font-family:monospace;font-size:11px">${E(JSON.stringify(snapshot()))}</textarea><div class="flex gap-2 mt-3 flex-wrap"><button class="btn" onclick="cp()">Copiar</button><button class="btn ghost" onclick="rs()">Importar</button><button class="btn ghost" onclick="close_()">Fechar</button></div>`)}
 function cp(){const t=$('#bkt');t.select();try{navigator.clipboard.writeText(t.value).catch(()=>document.execCommand('copy'))}catch(e){document.execCommand('copy')}toast('Copiado')}
-function rs(){try{const d=JSON.parse($('#bkt').value);if(!d||typeof d!='object')throw 0;S={v:d.v||{},m:d.m||[],a:d.a||[],l:d.l||[],t:d.t||[]};save();close_();render();toast('Backup restaurado')}catch(e){toast('Backup inválido')}}
-async function share(){const u=location.href;try{if(navigator.share)await navigator.share({title:'Garagem Digital',url:u});else{await navigator.clipboard.writeText(u);toast('Link copiado')}}catch(e){}}
-let tt;function toast(m){const t=$('#ts');t.textContent=m;t.classList.add('on');clearTimeout(tt);tt=setTimeout(()=>t.classList.remove('on'),2200)}
+async function imp(d){
+ if(!d||typeof d!='object')throw new Error('Backup inválido');
+ if(d.v&&Object.keys(d.v).length){
+  const nv={...S.v};Object.entries(d.v).forEach(([k,val])=>{if(val!==''&&val!=null)nv[k]=val});
+  const{error}=await sb.from('veiculos').update(vToDB(nv)).eq('id',VID);if(error)throw error}
+ for(const k of['m','a','l','t']){
+  const rows=(d[k]||[]).map(o=>{const x=toDB(k,o);x.veiculo_id=VID;return x});
+  if(rows.length){const{error}=await sb.from(MAP[k].tb).insert(rows);if(error)throw error}}
+ await load();render()}
+async function rs(){try{await imp(JSON.parse($('#bkt').value));close_();toast('Backup importado')}catch(e){toast(e instanceof SyntaxError?'Backup inválido':errMsg(e))}}
+async function impLocal(){
+ const d=legacy();if(!d)return;
+ try{await imp(d);localStorage.removeItem(LEGACY);toast('Dados enviados para a nuvem')}catch(e){toast(errMsg(e))}}
+
+/* ============ LOGIN ============ */
+function showLogin(){S=emptyS();VID=null;$('#lg').style.display='flex';$('#lg_msg').textContent=''}
+async function auth(mode){
+ const email=$('#lg_email').value.trim(),password=$('#lg_pass').value,msg=$('#lg_msg');
+ if(!email||password.length<6){msg.className='s bad';msg.textContent='Informe e-mail e senha (mínimo 6 caracteres)';return}
+ $('#lg_in').disabled=$('#lg_up').disabled=true;msg.className='s';msg.textContent='Aguarde…';
+ try{
+  if(mode=='up'){
+   const{data,error}=await sb.auth.signUp({email,password});if(error)throw error;
+   if(!data.session){msg.className='s ok';msg.textContent='Conta criada! Confirme o e-mail que enviamos e depois toque em Entrar.';return}
+  }else{
+   const{error}=await sb.auth.signInWithPassword({email,password});if(error)throw error}
+  $('#lg_pass').value='';await start();
+ }catch(e){msg.className='s bad';msg.textContent=errMsg(e)}
+ finally{$('#lg_in').disabled=$('#lg_up').disabled=false}}
+async function logout(){await sb.auth.signOut();showLogin()}
+let tt;function toast(m){const t=$('#ts');t.textContent=m;t.classList.add('on');clearTimeout(tt);tt=setTimeout(()=>t.classList.remove('on'),2600)}
 
 document.querySelectorAll('[data-ic]').forEach(e=>e.insertAdjacentHTML('afterbegin',ic(e.dataset.ic)));
-render();
+$('#lg_pass').addEventListener('keydown',e=>{if(e.key=='Enter')auth('in')});
+sb.auth.onAuthStateChange(ev=>{if(ev=='SIGNED_OUT')showLogin()});
+(async()=>{try{const{data:{session}}=await sb.auth.getSession();session?await start():showLogin()}catch(e){showLogin()}})();
 </script>
 </body>
 </html>
